@@ -30,6 +30,14 @@ async function run() {
       const result = await carsCollection.insertOne(newCar);
       res.send(result);
     });
+
+    // Get hero slider car rent
+    app.get("/heroSlider", async (req,res)=>{
+      const query = {status: true}
+      const cursor = carsCollection.find(query).limit(5)
+      const result = await cursor.toArray()
+      res.send(result)
+    })
   } finally {
     // await client.close();
   }

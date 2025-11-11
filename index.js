@@ -21,10 +21,15 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    const carRentalDB = client.db("carRentalDB");
+    const carsCollection = carRentalDB.collection("carsCollection");
+
+    // Create a new car rent
+    app.post("/newCar", async (req, res) => {
+      const newCar = req.body;
+      const result = await carsCollection.insertOne(newCar);
+      res.send(result);
+    });
   } finally {
     // await client.close();
   }

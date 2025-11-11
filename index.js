@@ -59,6 +59,27 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    // Get top rated car rent
+    app.get("/topRatedCars", async (req, res) => {
+      const projectFields = {
+        carName: 1,
+        rentPrice: 1,
+        carCategory: 1,
+        carImageUrl: 1,
+        ratings: 1,
+        status: 1,
+        providerName: 1,
+      };
+      const query = { ratings: -1 };
+      const cursor = carsCollection
+        .find()
+        .sort(query)
+        .limit(6)
+        .project(projectFields);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
   } finally {
     // await client.close();
   }

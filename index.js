@@ -31,10 +31,31 @@ async function run() {
       res.send(result);
     });
 
+    // Get all cars rent
+    app.get("/allCars", async (req, res) => {
+      const projectFields = {
+        carName: 1,
+        rentPrice: 1,
+        carCategory: 1,
+        carImageUrl: 1,
+        ratings: 1,
+        status: 1,
+        providerName: 1,
+      };
+      const cursor = carsCollection.find().project(projectFields);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // Get hero slider car rent
     app.get("/heroSlider", async (req, res) => {
+      const projectFields = {
+        carName: 1,
+        carImageUrl: 1,
+        carDesc: 1,
+      };
       const query = { status: true };
-      const cursor = carsCollection.find(query).limit(5);
+      const cursor = carsCollection.find(query).limit(5).project(projectFields);
       const result = await cursor.toArray();
       res.send(result);
     });

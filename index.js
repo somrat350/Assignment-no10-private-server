@@ -32,12 +32,33 @@ async function run() {
     });
 
     // Get hero slider car rent
-    app.get("/heroSlider", async (req,res)=>{
-      const query = {status: true}
-      const cursor = carsCollection.find(query).limit(5)
-      const result = await cursor.toArray()
-      res.send(result)
-    })
+    app.get("/heroSlider", async (req, res) => {
+      const query = { status: true };
+      const cursor = carsCollection.find(query).limit(5);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // Get newest car rent
+    app.get("/newestCars", async (req, res) => {
+      const projectFields = {
+        carName: 1,
+        rentPrice: 1,
+        carCategory: 1,
+        carImageUrl: 1,
+        ratings: 1,
+        status: 1,
+        providerName: 1,
+      };
+      const query = { createdAt: -1 };
+      const cursor = carsCollection
+        .find()
+        .sort(query)
+        .limit(6)
+        .project(projectFields);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
   } finally {
     // await client.close();
   }

@@ -63,6 +63,14 @@ async function run() {
       res.send(result);
     });
 
+    // Delete a car by id
+    app.delete("/deleteCar/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await carsCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // Get all cars rent
     app.get("/allCars", async (req, res) => {
       const projectFields = {

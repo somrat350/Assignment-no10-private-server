@@ -123,8 +123,12 @@ async function run() {
         carImageUrl: 1,
         carDesc: 1,
       };
-      const query = { status: true };
-      const cursor = carsCollection.find(query).limit(5).project(projectFields);
+      const sortBy = { ratings: -1 };
+      const cursor = carsCollection
+        .find()
+        .sort(sortBy)
+        .limit(5)
+        .project(projectFields);
       const result = await cursor.toArray();
       res.send(result);
     });

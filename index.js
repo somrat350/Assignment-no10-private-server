@@ -109,6 +109,22 @@ async function run() {
       const result = await carsCollection.findOne(query);
       res.send(result);
     });
+
+    // Get car by email
+    app.get("/myListings/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { providerEmail: email };
+      const projectFields = {
+        carDesc: 0,
+        providerName: 0,
+        providerEmail: 0,
+        location: 0,
+        createdAt: 0,
+      };
+      const cursor = carsCollection.find(query).project(projectFields);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
   } finally {
     // await client.close();
   }

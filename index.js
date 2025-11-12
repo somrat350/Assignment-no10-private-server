@@ -2,12 +2,38 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const admin = require("firebase-admin");
+const serviceAccount = require("./assignment-no10-private-admin-sdk.json");
 const port = process.env.PORT || 3000;
 const app = express();
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 // Middleware
 app.use(express.json());
 app.use(cors());
+
+// Custom middleware
+const verifyFirebaseToken = async (req, res, next) => {
+  const authorizationText = req.headers.authorization;
+  if (!authorizationText) {
+    return res.status(401).send({ message: "unauthorize access!" });
+  }
+  const token = authorizationText.split(" ")[1];
+  if (!token) {
+    return res.status(401).send({ message: "unauthorize access!" });
+  }
+
+  try {
+    const userInfo = await admin.auth().verifyIdToken(token);
+    req.tokenEmail = userInfo.email;
+    next();
+  } catch {
+    return res.status(401).send({ message: "unauthorize access!" });
+  }
+};
 
 const uri = `mongodb+srv://${process.env.DB_ADMIN}:${process.env.DB_PASSWORD}@cluster0.lechzdi.mongodb.net/?appName=Cluster0`;
 const client = new MongoClient(uri, {
@@ -26,22 +52,25 @@ async function run() {
     const bookingsCollection = carRentalDB.collection("bookingsCollection");
 
     // Create a new car rent
-    app.post("/newCar", async (req, res) => {
+    app.post("/newCar", verifyFirebaseToken, async (req, res) => {
       const newCar = req.body;
       const result = await carsCollection.insertOne(newCar);
       res.send(result);
     });
 
     // Create a new booking
-    app.post("/newBooking", async (req, res) => {
+    app.post("/newBooking", verifyFirebaseToken, async (req, res) => {
       const newBooking = req.body;
       const result = await bookingsCollection.insertOne(newBooking);
       res.send(result);
     });
 
     // Get booked car by email
-    app.get("/myBookings/:email", async (req, res) => {
+    app.get("/myBookings/:email", verifyFirebaseToken, async (req, res) => {
       const email = req.params.email;
+      if (email !== req.tokenEmail) {
+        return res.status(403).send({ message: "forbidden access!" });
+      }
       const query = { bookingEmail: email };
       const projectFields = {
         carImageUrl: 1,
@@ -55,7 +84,7 @@ async function run() {
     });
 
     // Update car details
-    app.patch("/updateCar/:id", async (req, res) => {
+    app.patch("/updateCar/:id", verifyFirebaseToken, async (req, res) => {
       const id = req.params.id;
       const updateCar = req.body;
       const query = { _id: new ObjectId(id) };
@@ -64,7 +93,7 @@ async function run() {
     });
 
     // Delete a car by id
-    app.delete("/deleteCar/:id", async (req, res) => {
+    app.delete("/deleteCar/:id", verifyFirebaseToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await carsCollection.deleteOne(query);
@@ -151,8 +180,11 @@ async function run() {
     });
 
     // Get car by email
-    app.get("/myListings/:email", async (req, res) => {
+    app.get("/myListings/:email", verifyFirebaseToken, async (req, res) => {
       const email = req.params.email;
+      if (email !== req.tokenEmail) {
+        return res.status(403).send({ message: "forbidden access!" });
+      }
       const query = { providerEmail: email };
       const projectFields = {
         carDesc: 0,

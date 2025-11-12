@@ -39,6 +39,21 @@ async function run() {
       res.send(result);
     });
 
+    // Get booked car by email
+    app.get("/myBookings/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { bookingEmail: email };
+      const projectFields = {
+        carImageUrl: 1,
+        carCategory: 1,
+        carName: 1,
+        rentPrice: 1,
+      };
+      const cursor = bookingsCollection.find(query).project(projectFields);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // Update car details
     app.patch("/updateCar/:id", async (req, res) => {
       const id = req.params.id;

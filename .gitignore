@@ -1,3 +1,4 @@
 node_modules
 .env
 assignment-no10-private-admin-sdk.json
+.vercel

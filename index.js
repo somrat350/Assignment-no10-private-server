@@ -2,8 +2,15 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+
+// Firebase admin services setting
 const admin = require("firebase-admin");
-const serviceAccount = require("./assignment-no10-private-admin-sdk.json");
+const decoded = Buffer.from(
+  process.env.FIREBASE_SERVICE_KEY,
+  "base64"
+).toString("utf8");
+const serviceAccount = JSON.parse(decoded);
+
 const port = process.env.PORT || 3000;
 const app = express();
 
@@ -46,7 +53,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const carRentalDB = client.db("carRentalDB");
     const carsCollection = carRentalDB.collection("carsCollection");
     const bookingsCollection = carRentalDB.collection("bookingsCollection");
@@ -208,6 +215,10 @@ async function run() {
 
 run().catch(console.dir);
 
+app.get("/", (req, res) => {
+  res.send("Server running successfully.");
+});
+
 app.listen(port, () => {
-  console.log(`Server running in http://localhost:${port}`);
+  console.log(`Server running in port : ${port}`);
 });

@@ -80,6 +80,7 @@ async function run() {
       }
       const query = { bookingEmail: email };
       const projectFields = {
+        carId: 1,
         carImageUrl: 1,
         carCategory: 1,
         carName: 1,
@@ -106,6 +107,18 @@ async function run() {
       const result = await carsCollection.deleteOne(query);
       res.send(result);
     });
+
+    // Delete booked car by id
+    app.delete(
+      "/deleteBookedCar/:id",
+      verifyFirebaseToken,
+      async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await bookingsCollection.deleteOne(query);
+        res.send(result);
+      }
+    );
 
     // Get all cars rent
     app.get("/allCars", async (req, res) => {

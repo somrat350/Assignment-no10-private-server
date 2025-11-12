@@ -23,11 +23,28 @@ async function run() {
     await client.connect();
     const carRentalDB = client.db("carRentalDB");
     const carsCollection = carRentalDB.collection("carsCollection");
+    const bookingsCollection = carRentalDB.collection("bookingsCollection");
 
     // Create a new car rent
     app.post("/newCar", async (req, res) => {
       const newCar = req.body;
       const result = await carsCollection.insertOne(newCar);
+      res.send(result);
+    });
+
+    // Create a new booking
+    app.post("/newBooking", async (req, res) => {
+      const newBooking = req.body;
+      const result = await bookingsCollection.insertOne(newBooking);
+      res.send(result);
+    });
+
+    // Update car details
+    app.patch("/updateCar/:id", async (req, res) => {
+      const id = req.params.id;
+      const updateCar = req.body;
+      const query = { _id: new ObjectId(id) };
+      const result = await carsCollection.updateOne(query, { $set: updateCar });
       res.send(result);
     });
 

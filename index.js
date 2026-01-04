@@ -55,8 +55,46 @@ async function run() {
   try {
     // await client.connect();
     const carRentalDB = client.db("carRentalDB");
+    const usersCollection = carRentalDB.collection("usersCollection");
     const carsCollection = carRentalDB.collection("carsCollection");
     const bookingsCollection = carRentalDB.collection("bookingsCollection");
+
+    // create new user
+    app.post("/newUser", async (req, res) => {
+      const newUser = req.body;
+      const query = { email: newUser.email };
+      const exist = await usersCollection.findOne(query);
+      if (exist) return res.send({ message: "user already exist." });
+
+      const result = await usersCollection.insertOne(newUser);
+      res.send(result);
+    });
+
+    // update user
+    app.put("/updateProfile", verifyFirebaseToken, async (req, res) => {
+      const { email } = req.query;
+      const updatedData = req.body;
+      const query = { email };
+      if (updatedData._id) {
+        delete updatedData._id;
+      }
+      const result = await usersCollection.updateOne(query, {
+        $set: updatedData,
+      });
+      res.send(result);
+    });
+
+    // get current user
+    app.get("/currentUser", verifyFirebaseToken, async (req, res) => {
+      const { email } = req.query;
+      const { tokenEmail } = req;
+      if (!email && email !== tokenEmail) {
+        return res.status(403).send({ message: "forbidden access!" });
+      }
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
 
     // Create a new car rent
     app.post("/newCar", verifyFirebaseToken, async (req, res) => {
@@ -122,6 +160,17 @@ async function run() {
 
     // Get all cars rent
     app.get("/allCars", async (req, res) => {
+      const { limit = 0, skip = 0, src } = req.query;
+      const limitNumber = parseInt(limit);
+      const skipNumber = parseInt(skip);
+      const query = {};
+      if (src !== "") {
+        query.$or = [
+          { carName: { $regex: src, $options: "i" } },
+          { carCategory: { $regex: src, $options: "i" } },
+          { status: { $regex: src, $options: "i" } },
+        ];
+      }
       const projectFields = {
         carName: 1,
         rentPrice: 1,
@@ -131,9 +180,14 @@ async function run() {
         status: 1,
         providerName: 1,
       };
-      const cursor = carsCollection.find().project(projectFields);
+      const cursor = carsCollection
+        .find(query)
+        .skip(skipNumber)
+        .limit(limitNumber)
+        .project(projectFields);
       const result = await cursor.toArray();
-      res.send(result);
+      const total = await carsCollection.countDocuments(query);
+      res.send({ result, total });
     });
 
     // Get hero slider car rent
@@ -212,7 +266,16 @@ async function run() {
       if (email !== req.tokenEmail) {
         return res.status(403).send({ message: "forbidden access!" });
       }
+      const { limit = 0, page = 1, status, search } = req.query;
       const query = { providerEmail: email };
+      if (status !== "all") {
+        query.status = status === "available";
+      }
+
+      if (search) {
+        query.carName = { $regex: search, $options: "i" };
+      }
+      const skip = (page - 1) * limit;
       const projectFields = {
         carDesc: 0,
         providerName: 0,
@@ -220,9 +283,14 @@ async function run() {
         location: 0,
         createdAt: 0,
       };
-      const cursor = carsCollection.find(query).project(projectFields);
+      const cursor = carsCollection
+        .find(query)
+        .skip(skip)
+        .limit(Number(limit))
+        .project(projectFields);
       const result = await cursor.toArray();
-      res.send(result);
+      const total = await carsCollection.countDocuments(query);
+      res.send({ result, total });
     });
   } finally {
     // await client.close();
